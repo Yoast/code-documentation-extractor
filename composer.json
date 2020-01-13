@@ -12,7 +12,8 @@
         "nikic/php-parser": "^4.3@dev",
         "symfony/console": "^5.1@dev",
         "symfony/finder": "^5.1@dev",
-        "phpdocumentor/reflection": " ~4.0"
+        "phpdocumentor/reflection": " ~4.0",
+        "twig/twig": "3.x-dev"
     },
     "autoload": {
         "psr-4": {

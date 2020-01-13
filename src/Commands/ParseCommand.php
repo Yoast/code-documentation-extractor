@@ -5,6 +5,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
+use YoastDocParser\Generator;
 use YoastDocParser\Parser;
 
 /**
@@ -26,6 +27,7 @@ class ParseCommand extends Command {
 
 		// Arguments
 		$this->addOption( 'directory', '-d', InputOption::VALUE_OPTIONAL, 'The plugin directory', '' );
+		$this->addOption( 'output-directory', '-o', InputOption::VALUE_OPTIONAL, 'The output directory', '' );
 	}
 
 	/**
@@ -37,7 +39,9 @@ class ParseCommand extends Command {
 	 * @return int The exit code.
 	 */
 	protected function execute( InputInterface $input, OutputInterface $output ) {
-		$directory = $input->getOption( 'directory' );
+		$directory 		 = $input->getOption( 'directory' );
+		$outputDirectory = $input->getOption( 'output-directory' );
+
 		$helper = $this->getHelper( 'question' );
 
 		// Check for empty directory.
@@ -54,9 +58,14 @@ class ParseCommand extends Command {
 			$directory = $helper->ask( $input, $output, $question );
 		}
 
+		if ( empty( $outputDirectory ) ) {
+			$outputDirectory = YOAST_PARSER_DIR . '/out/';
+		}
+
 		$output->writeln( 'Parsing plugin in directory: ' . $directory );
-		$parser = new Parser( $directory, $output );
-		$parser->parse();
+
+		$parserResults 	= ( new Parser( $directory, $output ) )->parse();
+		$generator 		= ( Generator::createDefaultInstance( $outputDirectory ) )->run( $parserResults );
 
 		return 0;
 	}

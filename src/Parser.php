@@ -62,7 +62,7 @@ class Parser {
 	/**
 	 * @var \PhpParser\Parser
 	 */
-	private $parser;
+	private $parserFactory;
 
 	/**
 	 * @var string
@@ -73,6 +73,11 @@ class Parser {
 	 * @var OutputInterface
 	 */
 	private $output;
+
+	/**
+	 * @var ProjectFactory
+	 */
+	private $projectFactory;
 
 	/**
 	 * Parser constructor.
@@ -86,15 +91,23 @@ class Parser {
 			throw new Error( 'The passed directory is invalid.' );
 		}
 
-		$this->directory = $directory;
-		$files = FileHelper::get_files( $directory, $this->ignore );
-
-		$this->files = $files;
-
-		$this->parser = ( new ParserFactory() )
-			->create( ParserFactory::PREFER_PHP5 );
-
 		$this->output = $output;
+		$this->directory = $directory;
+
+		$this->files = FileHelper::get_files(
+			$this->directory,
+			$this->ignore
+		);
+
+		$this->setupFactories();
+	}
+
+	public function getFileCount() {
+		return $this->files->count();
+	}
+
+	public function getPluginData() {
+		return $this->pluginData;
 	}
 
 	/**
@@ -104,9 +117,27 @@ class Parser {
 		// First attempt to collect plugin data.
 		$this->pluginData = $this->findPluginData();
 
-		$this->output->writeln( 'Successfully found plugin data' );
+		$files = array_map( function( $file ) {
+			return new LocalFile( $file );
+		}, array_keys( iterator_to_array( $this->files ) ) );
 
-		$factory = new ProjectFactory( [
+		$start   = microtime( true );
+		$project = $this->projectFactory->create( 'YoastSEO', $files );
+		$end     = microtime( true );
+
+		$this->output->writeln( sprintf( 'Parsed %d files in %s seconds',
+			count( $files ),
+			( $end - $start )
+		) );
+
+		return $project;
+	}
+
+	protected function setupFactories() {
+		$this->parserFactory = ( new ParserFactory() )
+			->create( ParserFactory::PREFER_PHP5 );
+
+		$this->projectFactory = new ProjectFactory( [
 			new Argument(new PrettyPrinter()),
 			new Class_(),
 			new GlobalConstant(new PrettyPrinter()),
@@ -119,19 +150,6 @@ class Parser {
 			new Property(new PrettyPrinter()),
 			new Trait_(),
 		] );
-
-		$files = array_map( function( $file ) {
-			return new LocalFile( $file );
-		}, array_keys( iterator_to_array( $this->files ) ) );
-
-		$start   = microtime( true );
-		$project = $factory->create( 'YoastSEO', $files );
-		$end     = microtime( true );
-
-		$this->output->writeln( sprintf( 'Parsed %d files in %s seconds',
-			count( $files ),
-			( $end - $start )
-		) );
 	}
 
 	/**
@@ -151,6 +169,8 @@ class Parser {
 		if ( $pluginData instanceof NullPlugin ) {
 			throw new RuntimeException( 'No plugin data could be found. Are you parsing the correct directory?' );
 		}
+
+		$this->output->writeln( 'Successfully found plugin data' );
 
 		return $pluginData;
 	}
