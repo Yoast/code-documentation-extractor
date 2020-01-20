@@ -1,0 +1,20 @@
+<h2>Actions and filters</h2>
+
+{% if hooks.filters %}
+    <h3>Filters</h3>
+    {% for filter in hooks.filters %}
+        <strong>{{ filter.name }}</strong> - {{ filter.description }}
+
+        {{ "\n\n"|nl2br }}
+    {% endfor %}
+{% endif %}
+
+{% if hooks.actions %}
+    <h3>Actions</h3>
+    {% for action in hooks.actions %}
+        <strong>{{ action.name }}</strong> - {{ action.description }}
+
+        {{ "\n\n"|nl2br }}
+    {% endfor %}
+{% endif %}
+

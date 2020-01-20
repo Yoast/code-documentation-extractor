@@ -13,11 +13,13 @@ use phpDocumentor\Reflection\Php\Factory\Interface_;
 use phpDocumentor\Reflection\Php\Factory\Property;
 use phpDocumentor\Reflection\Php\Factory\Trait_;
 use phpDocumentor\Reflection\Php\NodesFactory;
+use phpDocumentor\Reflection\Php\Project;
 use phpDocumentor\Reflection\Php\ProjectFactory;
 use phpDocumentor\Reflection\PrettyPrinter;
 use PhpParser\ParserFactory;
 use RuntimeException;
 use Symfony\Component\Console\Output\OutputInterface;
+use Webmozart\Assert\Assert;
 use YoastDocParser\Factories\Function_;
 use YoastDocParser\Factories\Method;
 use YoastDocParser\Helpers\FileHelper;
@@ -78,6 +80,10 @@ class Parser {
 	 * @var ProjectFactory
 	 */
 	private $projectFactory;
+	/**
+	 * @var \phpDocumentor\Reflection\Project
+	 */
+	private $project;
 
 	/**
 	 * Parser constructor.
@@ -94,7 +100,7 @@ class Parser {
 		$this->output = $output;
 		$this->directory = $directory;
 
-		$this->files = FileHelper::get_files(
+		$this->files = FileHelper::getFiles(
 			$this->directory,
 			$this->ignore
 		);
@@ -122,7 +128,7 @@ class Parser {
 		}, array_keys( iterator_to_array( $this->files ) ) );
 
 		$start   = microtime( true );
-		$project = $this->projectFactory->create( 'YoastSEO', $files );
+		$this->project = $this->projectFactory->create( 'YoastSEO', $files );
 		$end     = microtime( true );
 
 		$this->output->writeln( sprintf( 'Parsed %d files in %s seconds',
@@ -130,7 +136,13 @@ class Parser {
 			( $end - $start )
 		) );
 
-		return $project;
+		return $this;
+	}
+
+	public function getProject() {
+		Assert::isInstanceOf( $this->project, Project::class );
+
+		return $this->project;
 	}
 
 	protected function setupFactories() {

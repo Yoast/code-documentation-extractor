@@ -84,7 +84,7 @@ class Method extends AbstractFactory implements ProjectFactoryStrategy {
 		return new DocBlock(
 			$docBlock->getSummary(),
 			$docBlock->getDescription(),
-			$docBlock->getTags() + $filters,
+			array_merge( $docBlock->getTags(), $filters ),
 			$docBlock->getContext(),
 			$docBlock->getLocation(),
 			$docBlock->isTemplateStart(),

@@ -1,58 +1,134 @@
 <?php namespace YoastDocParser\Definitions;
 
 use phpDocumentor\Reflection\Element;
-use phpDocumentor\Reflection\Php\Class_;
 use phpDocumentor\Reflection\Php\File;
 use phpDocumentor\Reflection\Php\Method;
+use phpDocumentor\Reflection\Php\Visibility;
+use phpDocumentor\Reflection\Type;
 use Webmozart\Assert\Assert;
+use YoastDocParser\Definitions\Parts\Description;
+use YoastDocParser\Definitions\Parts\Meta;
+use YoastDocParser\Definitions\Parts\Parameter;
 
 /**
  * Class MethodDefinition
  * @package YoastDocParser\Definitions
  */
-class MethodDefinition {
+class MethodDefinition implements Definition {
 
 	/**
-	 * @param Class_ $class
-	 *
-	 * @return array
+	 * @var string
 	 */
-	public function create( $class ) {
-		Assert::isInstanceOfAny( $class, [ File::class, Element::class ] );
+	private $name;
+	/**
+	 * @var string
+	 */
+	private $namespace;
+	/**
+	 * @var Description
+	 */
+	private $description;
+	/**
+	 * @var array
+	 */
+	private $parameters;
+	/**
+	 * @var Meta
+	 */
+	private $meta;
+	/**
+	 * @var Type
+	 */
+	private $returns;
+	/**
+	 * @var string
+	 */
+	private $visibility;
 
-		// As there are potentially more than one methods in a file, we must accompany this.
-		$methods = [];
+	private $filters;
+	private $actions;
+
+	/**
+	 * MethodDefinition constructor.
+	 *
+	 * @param string      $name
+	 * @param string      $namespace
+	 * @param Description $description
+	 * @param array       $parameters
+	 * @param Visibility  $visibility
+	 * @param Type        $returns
+	 * @param Meta        $meta
+	 * @param array       $hooks
+	 */
+	public function __construct( string $name, string $namespace, Description $description, array $parameters, Visibility $visibility, Type $returns, Meta $meta, array $hooks ) {
+
+		$this->name        = $name;
+		$this->namespace   = $namespace;
+		$this->description = $description;
+		$this->parameters  = $parameters;
+		$this->visibility  = $visibility;
+		$this->returns     = $returns;
+		$this->meta        = $meta;
+		$this->filters     = $hooks['filters'];
+		$this->actions     = $hooks['actions'];
+	}
+
+	/**
+	 * @param Element $element
+	 *
+	 * @return DefinitionCollection
+	 */
+	public static function create( $element ) {
+		Assert::isInstanceOfAny( $element, [ File::class, Element::class ] );
+
+		$methods = new DefinitionCollection();
 
 		/** @var Method $method */
-		foreach ( $class->getMethods() as $method ) {
+		foreach ( $element->getMethods() as $method ) {
 
-
-			$methods[$method->getName()] = [
-				'name' => $method->getName(),
-				'namespace' => (string) $method->getFqsen(),
-				'summary' => $method->getDocBlock()->getSummary(),
-				'longDescription' => (string) $method->getDocBlock()->getDescription(),
-				'isAbstract' => $method->isAbstract(),
-				'isFinal' => $method->isFinal(),
-				'isStatic' => $method->isStatic(),
-				'isDeprecated' => $this->isDeprecated( $method ),
-				'parameters' => $this->getParameters( $method ),
-				'visibility' => (string) $method->getVisibility(),
-				'returns' => (string) $method->getReturnType(),
-			];
+			$methods->add(
+				new static(
+					$method->getName(),
+					(string) $method->getFqsen(),
+					Description::fromDocBlock( $method->getDocBlock() ),
+					Parameter::fromDocBlock( $method->getDocBlock() ),
+					$method->getVisibility(),
+					$method->getReturnType(),
+					new Meta(
+						$method->isAbstract(),
+						$method->isFinal(),
+						$method->getDocBlock()->hasTag( 'deprecated' ),
+						$method->isStatic()
+					),
+					HookDefinition::create( $method )
+				)
+			);
 		}
 
 		return $methods;
 	}
 
-	protected function getParameters( Method $method ) {
-		return array_map(
-			function( $param ) { return (string) $param; },
-			$method->getDocBlock()->getTagsByName( 'param' )
-		);
+	public function toArray() {
+		return [
+			'name'         => $this->name,
+			'namespace'    => $this->namespace,
+			'summary'      => $this->description->getSummary(),
+			'description'  => (string) $this->description,
+			'isAbstract'   => $this->meta->isAbstract(),
+			'isFinal'      => $this->meta->isFinal(),
+			'isStatic'     => $this->meta->isStatic(),
+			'isDeprecated' => $this->meta->isDeprecated(),
+			'parameters'   => $this->parameters,
+			'visibility'   => (string) $this->visibility,
+			'returns'      => (string) $this->returns,
+		];
 	}
 
-	protected function isDeprecated( Method $method ) {
-		return $method->getDocBlock()->hasTag( 'deprecated' );
+	public function getFilters() {
+		return $this->filters;
+	}
+
+	public function getActions() {
+		return $this->actions;
 	}
 }

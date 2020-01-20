@@ -15,5 +15,7 @@ interface Definition {
 	 *
 	 * @return mixed
 	 */
-	public function create( $object );
+	public static function create( $object );
+
+	public function toArray();
 }

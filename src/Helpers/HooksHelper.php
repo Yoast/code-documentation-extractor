@@ -1,9 +1,11 @@
 <?php namespace YoastDocParser\Helpers;
 
+use phpDocumentor\Reflection\DocBlockFactory;
 use PhpParser\Node;
 use PhpParser\Node\FunctionLike;
 use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
+use YoastDocParser\Tags\API;
 use YoastDocParser\Visitors\HookVisitor;
 
 /**
@@ -28,18 +30,14 @@ class HooksHelper {
 	];
 
 	/**
-	 * Gets the name of the passed node.
+	 * Determines whether or not the passed node is a filter.
 	 *
-	 * @param Node $node The node to get the name from.
+	 * @param Node $node The node to check.
 	 *
-	 * @return string The name of the node.
+	 * @return bool Whether or not it's a filter.
 	 */
-	public static function getName( Node $node ) {
-		if ( $node->name->getType() !== 'Name' ) {
-			return '';
-		}
-
-		return $node->name->toString();
+	public static function isFilter( $node ) {
+		return self::isHook( $node ) && in_array( self::getName( $node ), self::$hookFunctions['filters'], true );
 	}
 
 	/**
@@ -59,20 +57,24 @@ class HooksHelper {
 		return in_array(
 			$name,
 			// Flattens the array
-			array_merge(...array_values(self::$hookFunctions) ),
+			array_merge( ...array_values( self::$hookFunctions ) ),
 			true
 		);
 	}
 
 	/**
-	 * Determines whether or not the passed node is a filter.
+	 * Gets the name of the passed node.
 	 *
-	 * @param Node $node The node to check.
+	 * @param Node $node The node to get the name from.
 	 *
-	 * @return bool Whether or not it's a filter.
+	 * @return string The name of the node.
 	 */
-	public static function isFilter( $node ) {
-		return self::isHook( $node ) && in_array( self::getName( $node ), self::$hookFunctions['filters'], true );
+	public static function getName( Node $node ) {
+		if ( $node->name->getType() !== 'Name' ) {
+			return '';
+		}
+
+		return $node->name->toString();
 	}
 
 	/**
@@ -100,18 +102,18 @@ class HooksHelper {
 		}
 
 		$traverser = new NodeTraverser();
-		$traverser->addVisitor( new HookVisitor() );
+		$traverser->addVisitor( new HookVisitor( DocBlockFactory::createInstance( [ 'api' => API::class ] ) ) );
 		$nodes = $traverser->traverse( $object->getStmts() );
 
 		$finder  = new NodeFinder();
-		$filters = $finder->find( $nodes, function( Node $node ) {
+		$filters = $finder->find( $nodes, function ( Node $node ) {
 			return $node instanceof Node\Expr\FuncCall && self::isHook( $node );
 		} );
 
-		return array_map( function( $filter ) {
+		return array_map( function ( $filter ) {
 			if ( $filter->hasAttribute( 'hook' ) ) {
 				return $filter->getAttribute( 'hook' );
 			}
-		} , $filters );
+		}, $filters );
 	}
 }

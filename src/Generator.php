@@ -1,13 +1,14 @@
 <?php namespace YoastDocParser;
 
-use phpDocumentor\Reflection\Php\File;
 use phpDocumentor\Reflection\Project;
+use Symfony\Component\Filesystem\Filesystem;
 use Twig;
-use Webmozart\Assert\Assert;
-use YoastDocParser\Definitions\ClassDefinition;
+use Twig\Extension\DebugExtension;
+use Twig\Extra\Markdown\MarkdownExtension;
 use YoastDocParser\Definitions\Definition;
-use YoastDocParser\Definitions\FunctionDefinition;
-use YoastDocParser\Definitions\InterfaceDefinition;
+use YoastDocParser\Definitions\DefinitionFactory;
+use YoastDocParser\Helpers\StringHelper;
+use YoastDocParser\WordPress\PluginInterface;
 use YoastDocParser\Writers\Markdown;
 use YoastDocParser\Writers\Writer;
 
@@ -41,58 +42,81 @@ class Generator {
 		'interfaces' => 'interface.twig',
 		'functions'  => 'function.twig',
 	];
+	/**
+	 * @var DefinitionFactory
+	 */
+	private $factory;
+
+	/**
+	 * @var Filesystem
+	 */
+	private $filesystem;
+	/**
+	 * @var PluginInterface
+	 */
+	private $plugin;
+	/**
+	 * @var Project
+	 */
+	private $project;
+	/**
+	 * @var Parser
+	 */
+	private $parser;
+	/**
+	 * @var WordPress\NullPlugin|WordPress\Plugin
+	 */
+	private $pluginData;
 
 	/**
 	 * Generator constructor.
 	 *
-	 * @param Definition[] $definitions
-	 * @param string       $outputDir
-	 * @param string       $templateDir
-	 * @param string       $indexFile
-	 * @param Writer       $writer
+	 * @param Parser            $parser
+	 * @param DefinitionFactory $factory
+	 * @param string            $outputDir
+	 * @param string            $templateDir
+	 * @param Writer            $writer
 	 */
-	public function __construct( array $definitions, string $outputDir, string $templateDir, string $indexFile = 'index.md', Writer $writer = null ) {
-		Assert::isMap( $definitions );
+	public function __construct( Parser $parser, DefinitionFactory $factory, string $outputDir, string $templateDir, Writer $writer ) {
+		$this->project    = $parser->getProject();
+		$this->pluginData = $parser->getPluginData();
 
-		$this->definitions = $definitions;
-		$this->outputDir   = $outputDir;
+		$this->parser      = $parser;
+		$this->factory     = $factory;
+		$this->outputDir   = $this->prepareOutputDirectory( $outputDir );
 		$this->templateDir = $templateDir;
-		$this->indexFile   = $indexFile;
-		$this->writer      = ( $writer ) ?: new Markdown();
+		$this->indexFile   = 'index.md';
+		$this->writer      = $writer;
 
-		$loader     = new Twig\Loader\FilesystemLoader( $this->templateDir );
-		$this->twig = new Twig\Environment( $loader );
+		$this->filesystem = new Filesystem();
+		$loader           = new Twig\Loader\FilesystemLoader( $this->templateDir );
+		$this->twig       = new Twig\Environment( $loader, [ 'debug' => true ] );
+
+		$this->twig->addExtension( new DebugExtension() );
+		$this->twig->addExtension( new MarkdownExtension() );
 
 	}
 
-	public static function createDefaultInstance( string $outputDirectory ) {
+	protected function prepareOutputDirectory( string $outputDir ) {
+		return $outputDir . StringHelper::slugify( $this->pluginData->getName() ) . '/';
+	}
+
+	public static function createDefaultInstance( Parser $project, string $outputDirectory ) {
 		return new static(
-			[
-				'classes'    => ClassDefinition::class,
-				'interfaces' => InterfaceDefinition::class,
-				'functions'  => FunctionDefinition::class,
-			],
+			$project,
+			DefinitionFactory::createDefaultInstance(),
 			$outputDirectory,
-			YOAST_PARSER_DIR . '/src/Templates/'
+			YOAST_PARSER_DIR . '/src/Templates/',
+			new Markdown()
 		);
 	}
 
-	public function run( Project $project ) {
-		$this->prepare();
+	public function generate() {
+		$files = $this->factory->create( $this->project->getFiles() );
 
-		$this->generate( $this->buildFromDefinitions( $project ) );
-	}
-
-	protected function prepare() {
-		if ( ! is_dir( $this->outputDir ) ) {
-			mkdir( $this->outputDir, 0775, true );
-		}
-	}
-
-	protected function generate( $files ) {
 		foreach ( $files as $originalFileName => $file ) {
 			foreach ( array_keys( $file ) as $definition ) {
-				$this->render($file, $definition );
+				$this->render( $file, $definition );
 			}
 		}
 	}
@@ -114,67 +138,19 @@ class Generator {
 				$item
 			);
 
-			$this->writer->write( $this->outputDir . $definition, $name, $rendered );
+			$this->writer->write( $this->outputDir . $definition, $item['name'], $rendered );
 		}
-	}
-
-	protected function prepareFileName( $fileName ) {
-		return str_replace( YOAST_PARSER_DIR, '', $fileName );
 	}
 
 	protected function definitionHasTemplate( $definition ) {
 		return array_key_exists( $definition, $this->templates );
 	}
 
+	protected function templateFileExists( $template ) {
+		return $this->filesystem->exists( $this->templateDir . $this->templates[ $template ] );
+	}
+
 	protected function getTemplateName( $definition ) {
 		return $this->templates[ $definition ];
-	}
-
-	protected function templateFileExists( $template ) {
-		return file_exists( $this->templateDir . $this->templates[ $template ] );
-	}
-
-	protected function buildFromDefinitions( Project $project ) {
-		$fileDefinitions = [];
-
-		/** @var File $file */
-		foreach ( $project->getFiles() as $file ) {
-			$fileDefinitions[ $file->getPath() ] = $this->createDefinitions( $file );
-		}
-
-		return $fileDefinitions;
-	}
-
-	protected function createDefinitions( File $file ) {
-		$definitions = [];
-
-		foreach ( $this->definitions as $definition => $definitionClass ) {
-			$definitionClass = new $definitionClass;
-
-			Assert::isInstanceOf(
-				$definitionClass,
-				Definition::class,
-				'Only instances of `Definition` are allowed. Got: ' . get_class( $definitionClass )
-			);
-
-			$definitions[ $definition ] = $definitionClass->create( $file );
-		}
-
-		return $definitions;
-	}
-
-	protected function writeClass( string $fileName, array $classDefinitions ) {
-		if ( empty( $classDefinitions ) ) {
-			return;
-		}
-
-		$output = implode( '', array_map(
-				function ( $definition ) {
-					return $this->twig->render( 'class.twig', $definition );
-				}, $classDefinitions )
-		);
-
-
-		$this->writer->write( $fileName, $output );
 	}
 }

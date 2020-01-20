@@ -13,7 +13,11 @@
         "symfony/console": "^5.1@dev",
         "symfony/finder": "^5.1@dev",
         "phpdocumentor/reflection": " ~4.0",
-        "twig/twig": "3.x-dev"
+        "twig/twig": "3.x-dev",
+        "twig/markdown-extra": "3.x-dev",
+        "league/html-to-markdown": "^4.10@dev",
+        "tightenco/collect": "dev-master",
+        "symfony/filesystem": "^5.1@dev"
     },
     "autoload": {
         "psr-4": {

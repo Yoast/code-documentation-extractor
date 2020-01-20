@@ -1,6 +1,9 @@
 <?php namespace YoastDocParser\Visitors;
 
+use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlock\Tag;
+use phpDocumentor\Reflection\DocBlockFactory;
+use phpDocumentor\Reflection\Location;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 use YoastDocParser\Helpers\HooksHelper;
@@ -23,9 +26,24 @@ class HookVisitor extends NodeVisitorAbstract {
 	private $lastVisited = null;
 
 	/**
+	 * @var DocBlockFactory
+	 */
+	private $docBlockFactory;
+
+	/**
+	 * HookVisitor constructor.
+	 *
+	 * @param DocBlockFactory $docBlockFactory
+	 */
+	public function __construct( DocBlockFactory $docBlockFactory ) {
+
+		$this->docBlockFactory = $docBlockFactory;
+	}
+
+	/**
 	 * Visits the passed node in search of hook information.
 	 *
-	 * @param Node $node	The node to visit.
+	 * @param Node $node The node to visit.
 	 *
 	 * @return Node|void|null The resulting node or null if nothing was changed.
 	 */
@@ -58,33 +76,14 @@ class HookVisitor extends NodeVisitorAbstract {
 	}
 
 	/**
-	 * Leaves the node.
+	 * Determines whether the node is documentable.
 	 *
-	 * @param Node $node The node to leave.
+	 * @param Node $node The node to check.
 	 *
-	 * @return Node|null The node.
+	 * @return bool Whether or not the node is documentable.
 	 */
-	public function leaveNode( Node $node ) {
-		if ( ! $this->isHookNode( $node ) ) {
-			return $node;
-		}
-
-		$node->setAttribute( 'hook', $this->hooks );
-
-		return $node;
-	}
-
-	/**
-	 * Gets the last known Doc object.
-	 *
-	 * @return \PhpParser\Comment\Doc|null The last known Doc or null if none was set.
-	 */
-	protected function getLastDocComment() {
-		if ( $this->lastVisited === null ) {
-			return null;
-		}
-
-		return $this->lastVisited->getDocComment();
+	protected function isHookNode( Node $node ) {
+		return $node instanceof Node\Expr\FuncCall && HooksHelper::isHook( $node );
 	}
 
 	/**
@@ -108,14 +107,20 @@ class HookVisitor extends NodeVisitorAbstract {
 	}
 
 	/**
-	 * Determines whether the node is documentable.
+	 * Gets the last known DocBlock object.
 	 *
-	 * @param Node $node The node to check.
-	 *
-	 * @return bool Whether or not the node is documentable.
+	 * @return DocBlock|null The last known Doc or null if none was set.
 	 */
-	protected function isHookNode( Node $node ) {
-		return $node instanceof Node\Expr\FuncCall && HooksHelper::isHook( $node );
+	protected function getLastDocComment() {
+		if ( $this->lastVisited === null || $this->lastVisited->getDocComment() === null ) {
+			return null;
+		}
+
+		return $this->docBlockFactory->create(
+			$this->lastVisited->getDocComment()->getText(),
+			null,
+			new Location( $this->lastVisited->getLine() )
+		);
 	}
 
 	/**
@@ -127,5 +132,22 @@ class HookVisitor extends NodeVisitorAbstract {
 	 */
 	protected function isDeprecated( Node $node ) {
 		return strpos( HooksHelper::getName( $node ), '_deprecated' ) !== false;
+	}
+
+	/**
+	 * Leaves the node.
+	 *
+	 * @param Node $node The node to leave.
+	 *
+	 * @return Node|null The node.
+	 */
+	public function leaveNode( Node $node ) {
+		if ( ! $this->isHookNode( $node ) ) {
+			return $node;
+		}
+
+		$node->setAttribute( 'hook', $this->hooks );
+
+		return $node;
 	}
 }

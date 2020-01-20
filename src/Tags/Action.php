@@ -1,6 +1,6 @@
 <?php namespace YoastDocParser\Tags;
 
-use PhpParser\Comment\Doc;
+use phpDocumentor\Reflection\DocBlock;
 use Webmozart\Assert\Assert;
 
 /**
@@ -12,21 +12,21 @@ class Action extends BaseHookTag {
 	/**
 	 * Action constructor.
 	 *
-	 * @param string    $actionName   The action name.
-	 * @param mixed[][] $arguments    The action's arguments.
+	 * @param string        $actionName   The action name.
+	 * @param mixed[][]     $arguments    The action's arguments.
 	 *
-	 * @param Doc|null  $description  The action's description.
+	 * @param DocBlock|null $docBlock     The action's docblock.
 	 *
-	 * @param bool      $isDeprecated Whether or not the action is flagged as deprecated.
+	 * @param bool          $isDeprecated Whether or not the action is flagged as deprecated.
 	 */
 	public function __construct(
 		string $actionName,
 		array $arguments = [],
-		?Doc $description = null,
+		?DocBlock $docBlock = null,
 		bool $isDeprecated = false
 	) {
 		Assert::stringNotEmpty( $actionName );
 
-		parent::__construct( 'action', $actionName, $arguments, $description, $isDeprecated );
+		parent::__construct( 'action', $actionName, $arguments, $docBlock, $isDeprecated );
 	}
 }
