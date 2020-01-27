@@ -95,7 +95,7 @@ class PropertyDefinition implements Definition {
 			'name'            => $this->name,
 			'namespace'       => $this->namespace,
 			'summary'         => $this->description->getSummary(),
-			'longDescription' => (string) $this->description,
+			'description' => (string) $this->description,
 			'default'         => $this->default,
 			'types'           => $this->types,
 			'isStatic'        => $this->meta->isStatic(),

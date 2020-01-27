@@ -1,16 +1,16 @@
 {% include 'header.twig' %}
 
-* Interface name: {{ name }}
-* Namespace: {{ namespace }}
-* This is an **interface**
-{#{% if extends %}#}
-{#    * This interface extends: {% for interface in extends %}{{ interface|classLink }}{%if not loop.last %}, {% endif %}{% endfor %}#}
-{#{% endif %}#}
-{#{% if deprecated %}#}
-{#    * **Warning:** this interface is **deprecated**. This means that this interface will likely be removed in a future version.#}
-{#{% endif %}#}
+{% apply html_to_markdown %}
+	Namespace: {{ namespace }}
 
+	<p>Summary: {{ summary }}</p>
 
-{% if methods %}
-    {% include 'methods.twig' with { 'methods': methods } %}
-{% endif %}
+	{% include 'parts/meta.twig' %}
+
+	{% if methods %}
+		{% include 'methods.twig' with { 'methods': methods } %}
+	{% endif %}
+
+	{% include 'parts/source.twig' %}
+
+{% endapply %}

@@ -1,13 +1,14 @@
 <?php namespace YoastDocParser;
 
+use Cocur\Slugify\Bridge\Twig\SlugifyExtension;
+use Cocur\Slugify\Slugify;
 use phpDocumentor\Reflection\Project;
 use Symfony\Component\Filesystem\Filesystem;
 use Twig;
 use Twig\Extension\DebugExtension;
-use Twig\Extra\Markdown\MarkdownExtension;
 use YoastDocParser\Definitions\Definition;
 use YoastDocParser\Definitions\DefinitionFactory;
-use YoastDocParser\Helpers\StringHelper;
+use YoastDocParser\Extensions\Twig\Markdown\MarkdownExtension;
 use YoastDocParser\WordPress\PluginInterface;
 use YoastDocParser\Writers\Markdown;
 use YoastDocParser\Writers\Writer;
@@ -94,11 +95,12 @@ class Generator {
 
 		$this->twig->addExtension( new DebugExtension() );
 		$this->twig->addExtension( new MarkdownExtension() );
+		$this->twig->addExtension( new SlugifyExtension( Slugify::create() ) );
 
 	}
 
 	protected function prepareOutputDirectory( string $outputDir ) {
-		return $outputDir . StringHelper::slugify( $this->pluginData->getName() ) . '/';
+		return $outputDir . $this->pluginData->getSlug() . '/';
 	}
 
 	public static function createDefaultInstance( Parser $project, string $outputDirectory ) {
@@ -133,6 +135,7 @@ class Generator {
 		}
 
 		foreach ( $definedContent as $name => $item ) {
+
 			$rendered = $this->twig->render(
 				$this->getTemplateName( $definition ),
 				$item

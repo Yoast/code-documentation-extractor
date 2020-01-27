@@ -8,6 +8,7 @@ use Webmozart\Assert\Assert;
 use YoastDocParser\Definitions\Parts\Description;
 use YoastDocParser\Definitions\Parts\Meta;
 use YoastDocParser\Definitions\Parts\Parameter;
+use YoastDocParser\Definitions\Parts\Source;
 
 /**
  * Class FunctionDefinition
@@ -52,6 +53,10 @@ class FunctionDefinition implements Definition {
 	 * @var mixed
 	 */
 	private $actions;
+	/**
+	 * @var Source
+	 */
+	private $source;
 
 	/**
 	 * FunctionDefinition constructor.
@@ -63,8 +68,9 @@ class FunctionDefinition implements Definition {
 	 * @param Type        $returns
 	 * @param Meta        $meta
 	 * @param array       $hooks
+	 * @param Source      $source
 	 */
-	public function __construct( string $name, string $namespace, Description $description, array $parameters, Type $returns, Meta $meta, array $hooks ) {
+	public function __construct( string $name, string $namespace, Description $description, array $parameters, Type $returns, Meta $meta, array $hooks, Source $source ) {
 		$this->name        = $name;
 		$this->namespace   = $namespace;
 		$this->description = $description;
@@ -73,6 +79,7 @@ class FunctionDefinition implements Definition {
 		$this->meta        = $meta;
 		$this->filters     = $hooks['filters'];
 		$this->actions     = $hooks['actions'];
+		$this->source      = $source;
 	}
 
 	/**
@@ -100,7 +107,8 @@ class FunctionDefinition implements Definition {
 						false,
 						$function->getDocBlock()->hasTag( 'deprecated' )
 					),
-					HookDefinition::create( $function )
+					HookDefinition::create( $function ),
+					new Source( $file->getSource(), $function->getLocation()->getLineNumber() )
 				)
 			);
 		}
@@ -117,6 +125,9 @@ class FunctionDefinition implements Definition {
 			'isDeprecated' => $this->meta->isDeprecated(),
 			'parameters'   => $this->parameters,
 			'returns'      => (string) $this->returns,
+			'source'       => $this->source->getSource(),
+			'startLine'    => $this->source->getStartLine(),
+
 		];
 	}
 

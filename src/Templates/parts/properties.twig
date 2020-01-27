@@ -1,0 +1,23 @@
+<h2>Properties</h2>
+
+{% for property in properties %}
+	<h3>{{ property.name }}</h3>
+	<p>Namespace: {{ property.namespace }}</p>
+	<p>{{ property.summary }}</p>
+	<p>{{ property.description }}</p>
+
+	<p>Default: {{ property.default }}</p>
+
+	<ul>
+		<li>Visibility: {{ property.visibility }}</li>
+		{% if property.isStatic %}
+			<li>Static: Yes</li>
+		{% endif %}
+
+		{% if property.types %}
+			<li>
+				Types: {% for type in property.types %}{{ type }}{% if not loop.last %}, {% endif %}{% endfor %}
+			</li>
+		{% endif %}
+	</ul>
+{% endfor %}

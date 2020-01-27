@@ -1,0 +1,23 @@
+<ul>
+	{% if isAbstract %}
+		<li>Abstract: Yes</li>
+	{% endif %}
+
+	{% if isDeprecated %}
+		<li>Deprecated: Yes</li>
+	{% endif %}
+
+	{% if isFinal %}
+		<li>Final: Yes</li>
+	{% endif %}
+
+	{% if extends %}
+		<li>Parent class: {{ extends.0 }}</li>
+	{% endif %}
+
+	{% if implements %}
+		<li>
+			Implements: {% for interface in implements %}{{ interface }}{% if not loop.last %}, {% endif %}{% endfor %}
+		</li>
+	{% endif %}
+</ul>

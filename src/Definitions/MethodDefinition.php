@@ -61,7 +61,6 @@ class MethodDefinition implements Definition {
 	 * @param array       $hooks
 	 */
 	public function __construct( string $name, string $namespace, Description $description, array $parameters, Visibility $visibility, Type $returns, Meta $meta, array $hooks ) {
-
 		$this->name        = $name;
 		$this->namespace   = $namespace;
 		$this->description = $description;
@@ -85,7 +84,6 @@ class MethodDefinition implements Definition {
 
 		/** @var Method $method */
 		foreach ( $element->getMethods() as $method ) {
-
 			$methods->add(
 				new static(
 					$method->getName(),

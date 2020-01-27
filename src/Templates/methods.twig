@@ -2,36 +2,36 @@
 
 {% for method in methods %}
 
-    <h3>{{ method.name }}</h3>
-    {{ method.summary|raw }}
-    {{ method.longDescription|raw }}
+	<h3>{{ method.name }}</h3>
+	<p>{{ method.summary }}</p>
+	<p>{{ method.description }}</p>
 
-    <ul>
-        <li>Visibility: {{ method.visibility }}</li>
-        {% if method.isAbstract %}*
-            <li>Is abstract</li>
-        {% endif %}
+	<ul>
+		<li>Visibility: {{ method.visibility }}</li>
+		{% if method.isAbstract %}
+			<li>Is abstract</li>
+		{% endif %}
 
-        {% if method.isStatic %}*
-            <li>Is static</li>
-        {% endif %}
+		{% if method.isStatic %}
+			<li>Is static</li>
+		{% endif %}
 
-        {% if method.isDeprecated %}*
-            <li>Deprecated</li>
-        {% endif %}
-    </ul>
+		{% if method.isDeprecated %}
+			<li>Deprecated</li>
+		{% endif %}
+	</ul>
 
-{#    {% if method.definedBy != className %}* This method is defined by {{ method.definedBy|classLink }}#}
-{#    {% endif %}#}
+	{#    {% if method.definedBy != className %}* This method is defined by {{ method.definedBy|classLink }}#}
+	{#    {% endif %}#}
 
-{#    {% if method.parameters %}#}
-{#        #### Parameters#}
-{#        {% for argument in method.parameters %}#}
-{#            * {{ argument.name }} **{% if argument.type %}{{ argument.type|classLink }}{% else %}mixed{% endif %}**{% if argument.description %} - {{ argument.description }}{% endif %}#}
-{##}
-{#        {% endfor %}#}
-{##}
-{#    {% endif %}#}
+	{#    {% if method.parameters %}#}
+	{#        #### Parameters#}
+	{#        {% for argument in method.parameters %}#}
+	{#            * {{ argument.name }} **{% if argument.type %}{{ argument.type|classLink }}{% else %}mixed{% endif %}**{% if argument.description %} - {{ argument.description }}{% endif %}#}
+	{##}
+	{#        {% endfor %}#}
+	{##}
+	{#    {% endif %}#}
 
 
 {% endfor %}

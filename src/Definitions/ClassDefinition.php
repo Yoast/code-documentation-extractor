@@ -6,6 +6,7 @@ use phpDocumentor\Reflection\Php\File;
 use Webmozart\Assert\Assert;
 use YoastDocParser\Definitions\Parts\Description;
 use YoastDocParser\Definitions\Parts\Meta;
+use YoastDocParser\Definitions\Parts\Source;
 
 /**
  * Class ClassDefinition
@@ -50,6 +51,10 @@ class ClassDefinition implements Definition {
 	 * @var Meta
 	 */
 	private $meta;
+	/**
+	 * @var Source
+	 */
+	private $source;
 
 	/**
 	 * ClassDefinition constructor.
@@ -58,13 +63,14 @@ class ClassDefinition implements Definition {
 	 * @param string               $namespace
 	 * @param Description          $description
 	 * @param DefinitionCollection $methods
-	 * @param array                $properties
-	 * @param array                $constants
+	 * @param DefinitionCollection $properties
+	 * @param DefinitionCollection $constants
 	 * @param array                $implements
 	 * @param array                $extends
 	 * @param Meta                 $meta
+	 * @param Source               $source
 	 */
-	public function __construct( string $name, string $namespace, Description $description, DefinitionCollection $methods, DefinitionCollection $properties, DefinitionCollection $constants, array $implements, array $extends, Meta $meta ) {
+	public function __construct( string $name, string $namespace, Description $description, DefinitionCollection $methods, DefinitionCollection $properties, DefinitionCollection $constants, array $implements, array $extends, Meta $meta, Source $source ) {
 
 		$this->name        = $name;
 		$this->namespace   = $namespace;
@@ -75,6 +81,7 @@ class ClassDefinition implements Definition {
 		$this->implements  = $implements;
 		$this->extends     = $extends;
 		$this->meta        = $meta;
+		$this->source      = $source;
 	}
 
 	/**
@@ -104,7 +111,8 @@ class ClassDefinition implements Definition {
 						$class->isAbstract(),
 						$class->isFinal(),
 						$class->getDocBlock()->hasTag( 'deprecated' )
-					)
+					),
+					new Source( $file->getSource(), $class->getLocation()->getLineNumber() )
 				)
 			);
 		}
@@ -130,6 +138,8 @@ class ClassDefinition implements Definition {
 				'filters' => $this->getFilters()->toArray(),
 				'actions' => $this->getActions()->toArray(),
 			],
+			'source'       => $this->source->getSource(),
+			'startLine'    => $this->source->getStartLine(),
 		];
 	}
 
@@ -149,7 +159,6 @@ class ClassDefinition implements Definition {
 
 		return $this->extends[0]->getName();
 	}
-
 
 
 	protected function getFilters() {

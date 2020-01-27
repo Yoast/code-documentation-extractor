@@ -1,0 +1,16 @@
+{% include 'header.twig' %}
+
+{% apply html_to_markdown %}
+	<p>Namespace: {{ namespace }}</p>
+
+	<p>Summary: {{ summary }}</p>
+
+	{% include 'parts/meta.twig' %}
+
+	{% if hooks.filters is not empty or hooks.actions is not empty %}
+		{% include 'hooks.twig' with { 'hooks': hooks } %}
+	{% endif %}
+
+	{% include 'parts/source.twig' %}
+
+{% endapply %}

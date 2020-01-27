@@ -1,5 +1,7 @@
 <?php namespace YoastDocParser\WordPress;
 
+use Cocur\Slugify\Slugify;
+
 /**
  * Class Plugin
  * @package YoastDocParser\WordPress
@@ -42,6 +44,11 @@ class Plugin implements PluginInterface {
 	private $network;
 
 	/**
+	 * @var string
+	 */
+	private $slug;
+
+	/**
 	 * Plugin constructor.
 	 *
 	 * @param string     $name        The name of the plugin.
@@ -60,6 +67,7 @@ class Plugin implements PluginInterface {
 		$this->author      = $author;
 		$this->textdomain  = $textdomain;
 		$this->network     = $network;
+		$this->slug        = ( new Slugify() )->slugify( $name );
 	}
 
 	/**
@@ -141,5 +149,14 @@ class Plugin implements PluginInterface {
 	 */
 	public function isNetwork() {
 		return $this->network;
+	}
+
+	/**
+	 * Gets the slug of the plugin.
+	 *
+	 * @return string The slug.
+	 */
+	public function getSlug() {
+		return $this->slug;
 	}
 }

@@ -1,0 +1,7 @@
+<h2>Constants</h2>
+
+{% for constant in constants %}
+	<h3>{{ constant.name }}</h3>
+	<p>{{ constant.description }}</p>
+	<p>Value: {{ constant.value }}</p>
+{% endfor %}

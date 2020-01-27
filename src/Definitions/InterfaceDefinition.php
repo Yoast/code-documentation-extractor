@@ -5,6 +5,7 @@ use phpDocumentor\Reflection\Php\File;
 use phpDocumentor\Reflection\Php\Interface_;
 use Webmozart\Assert\Assert;
 use YoastDocParser\Definitions\Parts\Description;
+use YoastDocParser\Definitions\Parts\Source;
 
 /**
  * Class InterfaceDefinition
@@ -36,6 +37,10 @@ class InterfaceDefinition implements Definition {
 	 * @var array
 	 */
 	private $constants;
+	/**
+	 * @var Source
+	 */
+	private $source;
 
 	/**
 	 * InterfaceDefinition constructor.
@@ -46,8 +51,9 @@ class InterfaceDefinition implements Definition {
 	 * @param DefinitionCollection $methods
 	 * @param array                $extends
 	 * @param DefinitionCollection $constants
+	 * @param Source               $source
 	 */
-	public function __construct( string $name, string $namespace, Description $description, DefinitionCollection $methods, array $extends, DefinitionCollection $constants ) {
+	public function __construct( string $name, string $namespace, Description $description, DefinitionCollection $methods, array $extends, DefinitionCollection $constants, Source $source ) {
 
 		$this->name        = $name;
 		$this->namespace   = $namespace;
@@ -55,6 +61,7 @@ class InterfaceDefinition implements Definition {
 		$this->methods     = $methods;
 		$this->extends     = $extends;
 		$this->constants   = $constants;
+		$this->source      = $source;
 	}
 
 	/**
@@ -77,7 +84,8 @@ class InterfaceDefinition implements Definition {
 					Description::fromDocBlock( $interface->getDocBlock() ),
 					MethodDefinition::create( $interface ),
 					$interface->getParents(),
-					ConstantDefinition::create( $interface )
+					ConstantDefinition::create( $interface ),
+					new Source( $file->getSource(), $interface->getLocation()->getLineNumber() )
 				)
 			);
 		}
@@ -94,6 +102,8 @@ class InterfaceDefinition implements Definition {
 			'extends'         => array_map( function ( $parent ) { return (string) $parent; }, $this->extends ),
 			'methods'         => $this->methods->toArray(),
 			'constants'       => $this->constants->toArray(),
+			'source'          => $this->source->getSource(),
+			'startLine'       => $this->source->getStartLine(),
 		];
 	}
 }
